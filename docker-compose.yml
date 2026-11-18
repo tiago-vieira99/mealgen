@@ -53,6 +53,24 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
+  # Optional HTTPS directly on IP:port with a self-signed certificate (Caddy's internal CA),
+  # for when there's no domain and ports 80/443 are taken:
+  #   docker compose --profile https-ip up -d
+  caddy-ip:
+    image: caddy:2-alpine
+    profiles: ["https-ip"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:-127.0.0.1}
+    ports:
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./Caddyfile.ip:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   pgdata:
   caddy_data:

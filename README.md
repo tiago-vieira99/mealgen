@@ -54,6 +54,27 @@ Tables are created automatically on startup.
        proxy_set_header X-Forwarded-Proto $scheme;
    }
    ```
+   **C) No domain, ports 80/443 taken: HTTPS on `IP:port`** — uses a self-signed certificate from
+   Caddy's internal CA (encrypted, but browsers warn until you trust the root certificate). In `.env`:
+   ```
+   APP_BIND=127.0.0.1
+   APP_PORT=8000          # local-only port, must differ from HTTPS_PORT
+   PUBLIC_IP=203.0.113.10
+   HTTPS_PORT=8443
+   COOKIE_SECURE=true
+   BASE_URL=https://203.0.113.10:8443
+   ```
+   ```bash
+   docker compose --profile https-ip up -d
+   ```
+   To remove the browser warning on your own devices, export the root certificate and install it
+   (macOS: Keychain Access → System → "Always Trust"; iOS: install profile, then enable it under
+   Settings → General → About → Certificate Trust Settings; Android: Settings → Security → Install certificate):
+   ```bash
+   docker compose cp caddy-ip:/data/caddy/pki/authorities/local/root.crt ./mealgen-root.crt
+   ```
+   People opening a shared link without the root installed will see the warning once.
+
 4. Once you've created the accounts you need, set `ALLOW_REGISTRATION=false` and run `docker compose up -d`
    so strangers can't sign up.
 

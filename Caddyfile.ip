@@ -1,0 +1,13 @@
+{
+	# Only HTTPS is published; no HTTP->HTTPS redirect listener needed.
+	auto_https disable_redirects
+	# Browsers send no SNI when connecting to a bare IP, so pick the certificate explicitly.
+	default_sni {$PUBLIC_IP}
+}
+
+https://{$PUBLIC_IP} {
+	# Self-signed certificate from Caddy's local CA (root lives in the caddy_data volume).
+	tls internal
+	encode gzip
+	reverse_proxy app:8000
+}
