@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}MealGen{% endblock %}</title>
-  <meta name="theme-color" content="#f3ebdd">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3ebdd" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1511" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23c9643f'/><g fill='none' stroke='white' stroke-width='2' stroke-linecap='round' transform='translate(4 4)'><path d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/></g></svg>">
   <link rel="preload" href="{{ url_for('static', path='fonts/Fraunces-SemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', path='fonts/Inter-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=7">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=8">
   {% block head %}{% endblock %}
 </head>
 <body>
