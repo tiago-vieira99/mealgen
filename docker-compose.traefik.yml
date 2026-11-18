@@ -1,0 +1,22 @@
+# Put MealGen behind an existing Traefik (which already owns ports 80/443 and issues
+# Let's Encrypt certificates). Enable it by adding to .env:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml
+# then `docker compose up -d`. See the TRAEFIK_* variables in .env.example.
+services:
+  app:
+    networks:
+      - default
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:?Set TRAEFIK_NETWORK in .env}
+      traefik.http.routers.mealgen.rule: Host(`${TRAEFIK_HOST:?Set TRAEFIK_HOST in .env}`)
+      traefik.http.routers.mealgen.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.mealgen.tls: "true"
+      traefik.http.routers.mealgen.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.services.mealgen.loadbalancer.server.port: "8000"
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK}

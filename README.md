@@ -54,11 +54,26 @@ Tables are created automatically on startup.
        proxy_set_header X-Forwarded-Proto $scheme;
    }
    ```
+   **B2) Behind an existing Traefik** (it owns 80/443 and issues Let's Encrypt certificates) — find your
+   Traefik's network, entrypoint and resolver names (`docker network ls`, and the labels of a service it
+   already routes: `docker inspect <container> --format '{{json .Config.Labels}}'`), then in `.env`:
+   ```
+   COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml
+   TRAEFIK_NETWORK=traefik
+   TRAEFIK_HOST=dinners.example.com
+   TRAEFIK_ENTRYPOINT=websecure
+   TRAEFIK_CERTRESOLVER=letsencrypt
+   BASE_URL=https://dinners.example.com
+   COOKIE_SECURE=true
+   ```
+   and `docker compose up -d`. The hostname must resolve to the VM (a DNS A record, or a free wildcard-DNS
+   name like `dinners.203-0-113-10.sslip.io` if you have no domain).
+
    **C) No domain, ports 80/443 taken: HTTPS on `IP:port`** — uses a self-signed certificate from
    Caddy's internal CA (encrypted, but browsers warn until you trust the root certificate). In `.env`:
    ```
    APP_BIND=127.0.0.1
-   APP_PORT=8000          # local-only port, must differ from HTTPS_PORT
+   APP_PORT=8766          # any free port (local-only); Caddy reaches the app over the Docker network
    PUBLIC_IP=203.0.113.10
    HTTPS_PORT=8443
    COOKIE_SECURE=true
