@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Plans · MealGen{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">History</div>
+    <h1>Your plans</h1>
+    <p class="lede">Every plan you’ve made, newest week first.</p>
+  </div>
+  <a class="btn btn-primary" href="/plans/new">{{ icon('sparkle', 17) }} New plan</a>
+</div>
+
+{% if plans %}
+<div class="plan-groups">
+  {% for week_start, group in plans|groupby('week_start')|reverse %}
+  <section class="plan-group">
+    <h2>{{ week_label(week_start) or 'Week of' }} · {{ fmt_week(week_start) }}</h2>
+    <div class="card plan-rows">
+      {% for plan in group %}
+      <a class="plan-row" href="/plans/{{ plan.id }}">
+        <div>
+          <h3>{{ plan.name }}</h3>
+          <span class="muted small">{{ plan.entries|length }} dish{{ 'es' if plan.entries|length != 1 }} · created {{ fmt_short(plan.created_at.date()) }}</span>
+        </div>
+        <span class="dots" aria-hidden="true">
+          {% for entry in plan.entries[:10] %}<span class="dot dot-{{ entry.display_type or 'none' }}"></span>{% endfor %}
+        </span>
+        {{ icon('arrow-right', 18) }}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="bubble">{{ icon('calendar', 28) }}</div>
+  <h3>No plans yet</h3>
+  <p>Generate your first weekly plan in a few clicks.</p>
+  <a class="btn btn-primary" href="/plans/new">{{ icon('sparkle', 17) }} Plan a week</a>
+</div>
+{% endif %}
+{% endblock %}

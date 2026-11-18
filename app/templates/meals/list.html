@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag %}
+{% block title %}Meals · MealGen{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Library</div>
+    <h1>Your meals</h1>
+    <p class="lede">The dishes your plans are built from.</p>
+  </div>
+  <a class="btn btn-primary" href="/meals/new">{{ icon('plus', 18) }} New meal</a>
+</div>
+
+{% set qs = '&q=' ~ q|urlencode if q else '' %}
+<form method="get" action="/meals" class="toolbar">
+  <nav class="tabs" aria-label="Filter by type">
+    <a class="{{ 'active' if not active_type }}" href="/meals{{ '?' ~ qs[1:] if qs }}">All <span class="count">{{ total }}</span></a>
+    {% for key, label in meal_types.items() %}
+    <a class="{{ 'active' if active_type == key }}" href="/meals?type={{ key }}{{ qs }}"><span class="dot dot-{{ key }}"></span>{{ label }} <span class="count">{{ counts[key] }}</span></a>
+    {% endfor %}
+  </nav>
+  {% if active_type %}<input type="hidden" name="type" value="{{ active_type }}">{% endif %}
+  <label class="input-icon">{{ icon('search', 17) }}
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search meals" aria-label="Search meals">
+  </label>
+</form>
+
+{% if meals %}
+<div class="meal-grid">
+  {% for meal in meals %}
+  {% set ingredients = meal.ingredient_list %}
+  <article class="card meal-card">
+    <div>{{ tag(meal.meal_type.value) }}</div>
+    <h3>{{ meal.name }}</h3>
+    {% if meal.description %}<p class="notes">{{ meal.description }}</p>{% endif %}
+    {% if ingredients %}
+    <div class="chips">
+      {% for i in ingredients[:5] %}<span class="chip">{{ i }}</span>{% endfor %}
+      {% if ingredients|length > 5 %}<span class="chip">+{{ ingredients|length - 5 }}</span>{% endif %}
+    </div>
+    {% endif %}
+    <div class="meal-card-foot">
+      <span class="muted">{{ ingredients|length }} ingredient{{ 's' if ingredients|length != 1 }}</span>
+      <a class="btn btn-icon btn-sm btn-ghost" href="/meals/{{ meal.id }}/edit" aria-label="Edit {{ meal.name }}" title="Edit">{{ icon('pencil', 16) }}</a>
+      <form method="post" action="/meals/{{ meal.id }}/delete" class="inline"
+            data-confirm="Delete “{{ meal.name }}”? Existing plans keep its name.">
+        {{ csrf_input(request) }}
+        <button class="btn btn-icon btn-sm btn-ghost btn-danger" type="submit" aria-label="Delete {{ meal.name }}" title="Delete">{{ icon('trash', 16) }}</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="bubble">{{ icon('book', 28) }}</div>
+  {% if total %}
+  <h3>No matches</h3>
+  <p>Nothing matches that filter. Try another search.</p>
+  <a class="btn" href="/meals">Clear filters</a>
+  {% else %}
+  <h3>Your library is empty</h3>
+  <p>Add a few meals you like to cook. Five or more makes for a good weekly mix.</p>
+  <a class="btn btn-primary" href="/meals/new">{{ icon('plus', 18) }} Add your first meal</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

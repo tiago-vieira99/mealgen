@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}New plan · MealGen{% endblock %}
+{% block content %}
+<a class="back-link" href="/plans">{{ icon('arrow-left', 16) }} Plans</a>
+<div class="page-head">
+  <div>
+    <h1>Plan your week</h1>
+    <p class="lede">Pick the days and the mix — MealGen fills in dinners from your library.</p>
+  </div>
+</div>
+
+{% if meal_total == 0 %}
+<div class="flashes"><div class="alert alert-info"><span>Your library is empty, so you can only start an empty plan. <a href="/meals/new">Add some meals</a> to generate one.</span></div></div>
+{% endif %}
+
+<form method="post" action="/plans" id="plan-form" class="builder">
+  {{ csrf_input(request) }}
+  <div class="card">
+    <section class="step">
+      <span class="step-num">1</span>
+      <div>
+        <div class="step-head"><h3>Which week?</h3></div>
+        <div class="choice-grid">
+          {% for key in ["current", "next"] %}
+          <label class="choice">
+            <input type="radio" name="week" value="{{ key }}" {{ 'checked' if form.week == key }}>
+            <span class="choice-body">
+              <span class="choice-title">{{ week_labels[key] }}</span>
+              <span class="choice-sub">{{ fmt_week(week_starts[key]) }}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <span class="step-num">2</span>
+      <div>
+        <div class="step-head">
+          <h3>Which days?</h3>
+          <div class="row small">
+            <button type="button" class="btn btn-ghost btn-sm" data-days="all">All</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-days="weekdays">Weekdays</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-days="weekend">Weekend</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-days="none">Clear</button>
+          </div>
+        </div>
+        <div class="day-toggles">
+          {% for name in weekdays %}
+          {% set i = loop.index0 %}
+          <label class="choice {{ 'is-today' if form.week == 'current' and i == today_index }}" data-index="{{ i }}">
+            <input type="checkbox" name="days" value="{{ i }}" {{ 'checked' if i in form.days }} aria-label="{{ name }}">
+            <span class="choice-body">
+              <span class="choice-title">{{ name[:3] }}</span>
+              <span class="day-num" data-current="{{ (week_starts['current'] + i|days).day }}" data-next="{{ (week_starts['next'] + i|days).day }}">{{ (week_starts[form.week] + i|days).day }}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <span class="step-num">3</span>
+      <div>
+        <div class="step-head"><h3>Dishes per dinner</h3></div>
+        <div class="segmented" role="radiogroup" aria-label="Dishes per day">
+          {% for n in range(1, max_meals_per_day + 1) %}
+          <label><input type="radio" name="meals_per_day" value="{{ n }}" {{ 'checked' if form.meals_per_day == n }}><span>{{ n }}</span></label>
+          {% endfor %}
+        </div>
+        <p class="hint" style="margin-top: 10px">Most people want one. Pick more for a main plus a side, or for a big family.</p>
+      </div>
+    </section>
+
+    <section class="step">
+      <span class="step-num">4</span>
+      <div>
+        <div class="step-head"><h3>The mix</h3><span class="hint">How many days should include each type?</span></div>
+        {% for key, label in meal_types.items() %}
+        {% set current = form.type_days[key] %}
+        <div class="mix-row">
+          <div class="mix-label">
+            <span class="tag tag-{{ key }}" style="align-self: flex-start">{{ label }}</span>
+            <span class="hint">{{ counts[key] }} in your library</span>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label="Days with {{ label|lower }}">
+            <label><input type="radio" name="type_{{ key }}" value="" {{ 'checked' if current is none }}><span>Any</span></label>
+            {% for n in range(0, 8) %}
+            <label><input type="radio" name="type_{{ key }}" value="{{ n }}" data-n="{{ n }}" {{ 'checked' if current == n }}><span>{{ n }}</span></label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+        <p class="hint" style="margin-top: 12px">Numbers are exact — “2” means exactly two days with that type. “0” leaves it out.</p>
+      </div>
+    </section>
+
+    <section class="step">
+      <span class="step-num">5</span>
+      <div>
+        <div class="step-head"><h3>Name it <span class="muted small" style="font-family: var(--sans); font-weight: 400">· optional</span></h3></div>
+        <input class="input" name="name" value="{{ form.name }}" maxlength="120" placeholder="e.g. Back-to-school week">
+      </div>
+    </section>
+  </div>
+
+  <aside class="card card-pad summary">
+    <div class="eyebrow" style="margin-bottom: 6px">Summary</div>
+    <h3 style="margin-bottom: 18px" id="sum-title">{{ week_labels[form.week] }}</h3>
+    <dl>
+      <dt>Dates</dt><dd id="sum-week">{{ fmt_week(week_starts[form.week]) }}</dd>
+      <dt>Days</dt><dd id="sum-days">{{ form.days|length }}</dd>
+      <dt>Dishes</dt><dd id="sum-dishes">{{ form.days|length * form.meals_per_day }}</dd>
+      <dt>Mix</dt><dd id="sum-mix">Anything goes</dd>
+    </dl>
+    <div class="actions">
+      <button type="submit" name="mode" value="random" class="btn btn-primary btn-lg" {{ 'disabled' if meal_total == 0 }}>{{ icon('dice', 19) }} Generate plan</button>
+      <button type="submit" name="mode" value="manual" class="btn">Start with an empty plan</button>
+    </div>
+  </aside>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.getElementById("plan-form");
+  const todayIndex = {{ today_index }};
+  const weekRanges = {{ {"current": fmt_week(week_starts["current"]), "next": fmt_week(week_starts["next"])}|tojson }};
+  const weekLabels = {{ week_labels|tojson }};
+  const typeLabels = {{ meal_types|tojson }};
+  const boxes = [...form.querySelectorAll('input[name="days"]')];
+  const $ = (id) => document.getElementById(id);
+
+  const week = () => form.querySelector('input[name="week"]:checked').value;
+  const setDays = (pred) => boxes.forEach((b, i) => (b.checked = pred(i)));
+
+  const refresh = () => {
+    const days = boxes.filter((b) => b.checked).length;
+    const perDay = Number(form.querySelector('input[name="meals_per_day"]:checked').value);
+    // Exact day counts can't exceed the number of selected days.
+    form.querySelectorAll("input[data-n]").forEach((r) => {
+      r.disabled = Number(r.dataset.n) > days;
+      if (r.disabled && r.checked) form.querySelector(`input[name="${r.name}"][value=""]`).checked = true;
+    });
+    const mix = Object.keys(typeLabels)
+      .map((t) => [t, form.querySelector(`input[name="type_${t}"]:checked`).value])
+      .filter(([, v]) => v !== "")
+      .map(([t, v]) => (v === "0" ? `no ${typeLabels[t].toLowerCase()}` : `${v} ${typeLabels[t].toLowerCase()}`));
+    $("sum-title").textContent = weekLabels[week()];
+    $("sum-week").textContent = weekRanges[week()];
+    $("sum-days").textContent = days;
+    $("sum-dishes").textContent = days * perDay;
+    $("sum-mix").textContent = mix.length ? mix.join(", ") : "Anything goes";
+    form.querySelectorAll(".day-toggles .choice").forEach((el) =>
+      el.classList.toggle("is-today", week() === "current" && Number(el.dataset.index) === todayIndex)
+    );
+  };
+
+  form.querySelectorAll('input[name="week"]').forEach((radio) =>
+    radio.addEventListener("change", () => {
+      form.querySelectorAll(".day-num").forEach((el) => (el.textContent = el.dataset[radio.value]));
+      setDays((i) => radio.value === "next" || i >= todayIndex);
+      refresh();
+    })
+  );
+  form.querySelectorAll("[data-days]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.days;
+      setDays((i) => mode === "all" || (mode === "weekdays" && i < 5) || (mode === "weekend" && i >= 5));
+      refresh();
+    })
+  );
+  form.addEventListener("change", refresh);
+  refresh();
+})();
+</script>
+{% endblock %}

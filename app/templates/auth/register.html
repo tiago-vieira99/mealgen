@@ -1,0 +1,22 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Create account · MealGen{% endblock %}
+{% block form %}
+<h2>Create your account</h2>
+<p class="lede">Your meals and plans stay private to you.</p>
+<form method="post" action="/register" class="stack">
+  {{ csrf_input(request) }}
+  <label class="field"><span>Username</span>
+    <input class="input" name="username" value="{{ username or '' }}" autocomplete="username" autocapitalize="none" spellcheck="false"
+           pattern="[A-Za-z0-9_.\-]{3,50}" title="3–50 characters: letters, numbers, '.', '_' or '-'" required autofocus>
+  </label>
+  <label class="field"><span>Password</span>
+    <input class="input" type="password" name="password" autocomplete="new-password" minlength="8" required>
+    <span class="hint">At least 8 characters.</span>
+  </label>
+  <label class="field"><span>Confirm password</span>
+    <input class="input" type="password" name="password_confirm" autocomplete="new-password" minlength="8" required>
+  </label>
+  <button type="submit" class="btn btn-dark btn-lg btn-block">Create account</button>
+</form>
+<p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>
+{% endblock %}

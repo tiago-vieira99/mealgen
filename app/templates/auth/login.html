@@ -1,0 +1,20 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Sign in · MealGen{% endblock %}
+{% block form %}
+<h2>Welcome back</h2>
+<p class="lede">Sign in to plan this week’s dinners.</p>
+<form method="post" action="/login" class="stack">
+  {{ csrf_input(request) }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <label class="field"><span>Username</span>
+    <input class="input" name="username" value="{{ username or '' }}" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+  </label>
+  <label class="field"><span>Password</span>
+    <input class="input" type="password" name="password" autocomplete="current-password" required>
+  </label>
+  <button type="submit" class="btn btn-dark btn-lg btn-block">Sign in</button>
+</form>
+{% if allow_registration() %}
+<p class="auth-switch">New here? <a href="/register">Create an account</a></p>
+{% endif %}
+{% endblock %}

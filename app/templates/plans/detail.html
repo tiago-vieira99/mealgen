@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, shopping_list %}
+{% block title %}{{ plan.name }} · MealGen{% endblock %}
+{% block content %}
+<a class="back-link" href="/plans">{{ icon('arrow-left', 16) }} Plans</a>
+<div class="page-head">
+  <div>
+    <div class="eyebrow accent">{% if week_label(plan.week_start) %}{{ week_label(plan.week_start) }} · {% endif %}{{ fmt_week(plan.week_start) }}</div>
+    <h1 style="margin-top: 8px">{{ plan.name }}</h1>
+  </div>
+  <form method="post" action="/plans/{{ plan.id }}/regenerate" class="inline"
+        data-confirm="Re-roll every dish in this plan? Your manual picks will be replaced.">
+    {{ csrf_input(request) }}
+    <button class="btn" type="submit">{{ icon('dice', 18) }} Re-roll all</button>
+  </form>
+</div>
+
+<div class="plan-layout">
+  <div class="stack plan-main" style="gap: 20px">
+  <form method="post" action="/plans/{{ plan.id }}/entries" id="entries-form" class="card">
+    {{ csrf_input(request) }}
+    <ol class="menu">
+      {% for day, entries in plan.entries_by_day() %}
+      <li class="menu-day {{ 'is-today' if day == today }}">
+        <div class="menu-date">
+          <span class="eyebrow">{{ fmt_weekday(day)[:3] }}</span>
+          <span class="num">{{ day.day }}</span>
+          {% if day == today %}<span class="today-pill">Today</span>{% endif %}
+        </div>
+        <div class="dishes">
+          {% for entry in entries %}
+          <div class="dish-edit" id="entry-{{ entry.id }}">
+            <span class="dot dot-{{ 'skip' if entry.skipped else entry.display_type or 'none' }}"></span>
+            <select class="dish-select {{ 'is-skipped' if entry.skipped else 'is-empty' if not entry.display_name }}" name="entry-{{ entry.id }}"
+                    aria-label="Dish for {{ fmt_weekday(day) }}">
+              <option value="">Choose a dish…</option>
+              <option value="skip" {{ 'selected' if entry.skipped }}>Nothing this day</option>
+              {% if not entry.meal and entry.meal_name %}
+              <option value="keep" selected>{{ entry.meal_name }} (deleted)</option>
+              {% endif %}
+              {% for key, label in meal_types.items() if meals_by_type[key] %}
+              <optgroup label="{{ label }}">
+                {% for meal in meals_by_type[key] %}
+                <option value="{{ meal.id }}" {{ 'selected' if meal.id == entry.meal_id }}>{{ meal.name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+            {{ tag(entry.display_type) }}
+            <button type="submit" class="btn btn-icon btn-sm btn-ghost" formaction="/plans/{{ plan.id }}/entries/{{ entry.id }}/reroll"
+                    title="Swap for another random {{ meal_types[entry.display_type]|lower if entry.display_type else '' }} dish"
+                    aria-label="Swap for a random dish">{{ icon('shuffle', 16) }}</button>
+          </div>
+          {% endfor %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    <noscript><div style="padding: 0 24px 20px"><button type="submit" class="btn btn-dark">Save changes</button></div></noscript>
+  </form>
+
+  {{ shopping_list(plan) }}
+  </div>
+
+  <aside class="plan-aside">
+    <section class="card card-pad" id="share">
+      <div class="row" style="margin-bottom: 14px">
+        <h3 class="card-title">{{ icon('share', 18) }} Share</h3>
+      </div>
+      <a class="share-thumb" href="{{ share_url }}" target="_blank" rel="noopener" title="Open the shared page">
+        <img src="{{ image_url }}?v={{ range(100000)|random }}" alt="Image of {{ plan.name }}" loading="lazy">
+      </a>
+      <div class="copy-field">
+        <input type="text" readonly value="{{ share_url }}" id="share-url" aria-label="Share link">
+        <button type="button" class="btn btn-sm btn-dark" id="copy-link">{{ icon('copy', 15) }}<span>Copy</span></button>
+      </div>
+      <div class="share-actions">
+        <a class="btn btn-sm" href="{{ image_url }}?download=1">{{ icon('download', 15) }} Image</a>
+        <button type="button" class="btn btn-sm" id="native-share" hidden>{{ icon('share', 15) }} Send…</button>
+        <a class="btn btn-sm" id="open-link" href="{{ share_url }}" target="_blank" rel="noopener">{{ icon('external', 15) }} Open</a>
+      </div>
+      <p class="hint" style="margin-top: 12px">Anyone with the link can view this plan — no account needed.</p>
+      <div class="aside-foot">
+        <form method="post" action="/plans/{{ plan.id }}/share/rotate" class="inline"
+              data-confirm="Create a new link? The current one will stop working.">
+          {{ csrf_input(request) }}
+          <button type="submit" class="link-btn muted small">Reset link</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card card-pad">
+      <h3 class="card-title" style="margin-bottom: 14px">{{ icon('pencil', 17) }} Plan details</h3>
+      <div class="stack" style="gap: 12px">
+        <label class="field"><span>Name</span>
+          <input class="input" name="name" value="{{ plan.name }}" maxlength="120" required form="entries-form">
+        </label>
+        <button type="submit" class="btn btn-sm btn-dark" form="entries-form" style="align-self: flex-start">Save name</button>
+      </div>
+      <div class="aside-foot">
+        <span class="muted small">Created {{ fmt_short(plan.created_at.date()) }}</span>
+        <form method="post" action="/plans/{{ plan.id }}/delete" class="inline" data-confirm="Delete this plan? This can’t be undone.">
+          {{ csrf_input(request) }}
+          <button type="submit" class="btn btn-sm btn-ghost btn-danger">{{ icon('trash', 15) }} Delete</button>
+        </form>
+      </div>
+    </section>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.getElementById("entries-form");
+  form.querySelectorAll("select").forEach((s) => s.addEventListener("change", () => form.requestSubmit()));
+
+  const url = document.getElementById("share-url").value;
+  const copyBtn = document.getElementById("copy-link");
+  const copyLabel = copyBtn.querySelector("span");
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      document.getElementById("share-url").select();
+      document.execCommand("copy");
+    }
+    copyLabel.textContent = "Copied";
+    setTimeout(() => (copyLabel.textContent = "Copy"), 1800);
+  });
+
+  const shareBtn = document.getElementById("native-share");
+  if (navigator.share) {
+    shareBtn.hidden = false;
+    document.getElementById("open-link").hidden = true;
+    shareBtn.addEventListener("click", async () => {
+      const title = {{ plan.name|tojson }};
+      try {
+        const blob = await (await fetch({{ image_url|tojson }})).blob();
+        const file = new File([blob], "dinner-plan.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title, text: url, files: [file] });
+          return;
+        }
+      } catch (e) {
+        if (e.name === "AbortError") return;
+      }
+      navigator.share({ title, url }).catch(() => {});
+    });
+  }
+})();
+</script>
+{% endblock %}

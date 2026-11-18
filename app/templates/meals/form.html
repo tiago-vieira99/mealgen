@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit meal' if meal else 'New meal' }} · MealGen{% endblock %}
+{% block content %}
+<div class="form-shell">
+  <a class="back-link" href="/meals">{{ icon('arrow-left', 16) }} Meals</a>
+  <div class="page-head" style="margin-bottom: 24px">
+    <div>
+      <h1>{{ 'Edit meal' if meal else 'New meal' }}</h1>
+      <p class="lede">{{ 'Changes show up in every plan that uses it.' if meal else 'Add a dish to your library.' }}</p>
+    </div>
+  </div>
+
+  <form method="post" action="{{ '/meals/' ~ meal.id if meal else '/meals' }}" class="card card-pad stack">
+    {{ csrf_input(request) }}
+    <label class="field"><span>Name</span>
+      <input class="input" name="name" value="{{ values.name or '' }}" maxlength="120" placeholder="e.g. Roast chicken with lemon" required {{ 'autofocus' if not meal }}>
+    </label>
+
+    <fieldset class="field">
+      <legend class="label" style="margin-bottom: 7px">Type</legend>
+      <div class="choice-grid">
+        {% for key, label in meal_types.items() %}
+        <label class="choice choice-{{ key }}">
+          <input type="radio" name="meal_type" value="{{ key }}" {{ 'checked' if values.meal_type == key }} required>
+          <span class="choice-body">
+            <span class="choice-title row" style="gap: 8px"><span class="dot dot-{{ key }}"></span>{{ label }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <label class="field"><span>Ingredients <span class="muted">· one per line</span></span>
+      <textarea class="textarea" name="ingredients" rows="6" placeholder="Chicken thighs&#10;Lemon&#10;Garlic&#10;Potatoes">{{ values.ingredients or '' }}</textarea>
+      <span class="hint">These build the shopping list of each plan.</span>
+    </label>
+
+    <label class="field"><span>Notes <span class="muted">· optional</span></span>
+      <textarea class="textarea" name="description" rows="4" placeholder="How you make it, a link to the recipe, who loves it…">{{ values.description or '' }}</textarea>
+    </label>
+
+    <div class="row" style="padding-top: 6px">
+      <button type="submit" class="btn btn-dark">{{ 'Save changes' if meal else 'Save meal' }}</button>
+      {% if not meal %}<button type="submit" name="another" value="1" class="btn">Save and add another</button>{% endif %}
+      <span class="spacer"></span>
+      <a class="btn btn-ghost" href="/meals">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

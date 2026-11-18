@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import menu %}
+{% block content %}
+<section class="hero">
+  <div class="eyebrow accent">{{ fmt_day(today) }}</div>
+  <h1>{{ greeting }}, <em>{{ user.username }}</em>.</h1>
+  <p class="lede">
+    {% if meal_count %}{{ meal_count }} meal{{ 's' if meal_count != 1 }} in your library — here’s what’s cooking.{% else %}Let’s get your dinners planned.{% endif %}
+  </p>
+</section>
+
+{% if meal_count == 0 %}
+<div class="card onboarding">
+  <div>
+    <h2>Start with your meal library</h2>
+    <p>Add the dishes you like to cook. Plans are generated only from your own meals.</p>
+  </div>
+  <a class="btn btn-primary" href="/meals/new">{{ icon('plus', 18) }} Add your first meal</a>
+</div>
+{% endif %}
+
+<div class="week-columns">
+  {% for key, start, plan in weeks %}
+  <section class="card week-card">
+    <div class="card-head">
+      <div>
+        <div class="eyebrow">{{ week_label(start) }} · {{ fmt_week(start) }}</div>
+        <h2>{{ plan.name if plan else 'No plan yet' }}</h2>
+      </div>
+      {% if plan %}<a class="btn btn-icon btn-ghost" href="/plans/{{ plan.id }}" aria-label="Open plan">{{ icon('arrow-right', 18) }}</a>{% endif %}
+    </div>
+    {% if plan %}
+      {{ menu(plan, today=today, compact=true) }}
+      <div class="card-foot">
+        <a class="btn btn-sm btn-dark" href="/plans/{{ plan.id }}">Open plan</a>
+        <a class="btn btn-sm" href="/plans/{{ plan.id }}#share">{{ icon('share', 15) }} Share</a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="bubble">{{ icon('dice', 28) }}</div>
+        <p>Roll a random plan from your meals, or fill one in yourself.</p>
+        <a class="btn btn-primary" href="/plans/new?week={{ key }}">{{ icon('sparkle', 17) }} Plan {{ week_label(start)|lower }}</a>
+      </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

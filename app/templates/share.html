@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import menu, shopping_list %}
+{% block title %}{{ plan.name }} · MealGen{% endblock %}
+{% block head %}
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Dinner plan · {{ fmt_week(plan.week_start) }}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ plan.name }}">
+  <meta property="og:description" content="Dinner plan · {{ fmt_week(plan.week_start) }}">
+  <meta property="og:url" content="{{ share_url }}">
+  <meta property="og:image" content="{{ image_url }}">
+  <meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+{% block content %}
+<article class="share-page">
+  <header class="share-hero">
+    <div class="ornament">{{ icon('logo', 18) }}</div>
+    <h1>{{ plan.name }}</h1>
+    <p class="meta">{{ fmt_week(plan.week_start) }} · shared by {{ owner }}</p>
+    <div class="row">
+      <a class="btn btn-sm" href="{{ image_url }}?download=1">{{ icon('download', 15) }} Save image</a>
+      <button type="button" class="btn btn-sm" id="copy-link">{{ icon('link', 15) }}<span>Copy link</span></button>
+      {% if user and user.id == plan.user_id %}<a class="btn btn-sm btn-dark" href="/plans/{{ plan.id }}">{{ icon('pencil', 15) }} Edit</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="card">
+    {{ menu(plan, details=true) }}
+  </div>
+
+  <div style="margin-top: 20px">{{ shopping_list(plan) }}</div>
+
+  {% if not user %}
+  <p class="share-foot">Planned with MealGen · <a href="{{ '/register' if allow_registration() else '/login' }}">Plan your own week</a></p>
+  {% endif %}
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("copy-link").addEventListener("click", async (e) => {
+    const label = e.currentTarget.querySelector("span");
+    try { await navigator.clipboard.writeText({{ share_url|tojson }}); label.textContent = "Copied"; }
+    catch { label.textContent = "Copy failed"; }
+    setTimeout(() => (label.textContent = "Copy link"), 1800);
+  });
+</script>
+{% endblock %}

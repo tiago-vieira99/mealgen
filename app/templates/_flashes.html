@@ -1,0 +1,9 @@
+{% set flashes = pop_flashes(request) %}
+{% if flashes or error %}
+<div class="flashes" role="status">
+  {% for category, message in flashes %}
+  <div class="alert alert-{{ category }}"><span>{{ message }}</span><button type="button" class="close" aria-label="Dismiss">{{ icon('x', 16) }}</button></div>
+  {% endfor %}
+  {% if error %}<div class="alert alert-error"><span>{{ error }}</span></div>{% endif %}
+</div>
+{% endif %}

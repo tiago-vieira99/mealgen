@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}MealGen{% endblock %}</title>
+  <meta name="theme-color" content="#f3ebdd">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23c9643f'/><g fill='none' stroke='white' stroke-width='2' stroke-linecap='round' transform='translate(4 4)'><path d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/></g></svg>">
+  <link rel="preload" href="{{ url_for('static', path='fonts/Fraunces-SemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', path='fonts/Inter-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=7">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% block shell %}
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="/"><span class="brand-mark">{{ icon('logo', 18) }}</span>MealGen</a>
+      {% if user %}
+      {% set path = request.url.path %}
+      <nav class="nav" aria-label="Main">
+        <a href="/" class="{{ 'active' if path == '/' }}">{{ icon('home', 20) }}Home</a>
+        <a href="/plans" class="{{ 'active' if path.startswith('/plans') }}">{{ icon('calendar', 20) }}Plans</a>
+        <a href="/meals" class="{{ 'active' if path.startswith('/meals') }}">{{ icon('book', 20) }}Meals</a>
+      </nav>
+      <div class="user-menu">
+        <span class="avatar" title="Signed in as {{ user.username }}">{{ user.username[:1] }}</span>
+        <form method="post" action="/logout" class="inline">
+          {{ csrf_input(request) }}
+          <button type="submit" class="btn btn-ghost btn-sm" title="Log out">{{ icon('logout', 16) }}<span>Log out</span></button>
+        </form>
+      </div>
+      {% else %}
+      <div class="user-menu"><a class="btn btn-sm" href="/login">Sign in</a></div>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="container page">
+    {% include "_flashes.html" %}
+    {% block content %}{% endblock %}
+  </main>
+{% endblock %}
+
+  <script>
+    document.addEventListener("submit", (e) => {
+      const msg = e.target.dataset.confirm;
+      if (msg && !confirm(msg)) e.preventDefault();
+    });
+    document.addEventListener("click", (e) => {
+      const close = e.target.closest(".alert .close");
+      if (close) close.parentElement.remove();
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

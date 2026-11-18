@@ -1,0 +1,56 @@
+{% macro tag(meal_type) -%}
+{% if meal_type %}<span class="tag tag-{{ meal_type }}">{{ meal_types[meal_type] }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro dish_label(entry) -%}
+{{ entry.display_name or ('Nothing planned' if entry.skipped else 'To be decided') }}
+{%- endmacro %}
+
+{# Read-only menu of a plan. `details` shows notes/ingredients (public page). #}
+{% macro menu(plan, today=None, compact=false, details=false) -%}
+<ol class="menu {{ 'compact' if compact }}">
+  {% for day, entries in plan.entries_by_day() %}
+  <li class="menu-day {{ 'is-today' if day == today }}">
+    <div class="menu-date">
+      <span class="eyebrow">{{ fmt_weekday(day)[:3] }}</span>
+      <span class="num">{{ day.day }}</span>
+      {% if day == today and not compact %}<span class="today-pill">Today</span>{% endif %}
+    </div>
+    <div class="dishes">
+      {% for entry in entries %}
+      <div class="dish">
+        {% if details %}
+        <div class="dish-body">
+          <div class="dish-name {{ 'is-skipped' if entry.skipped else 'is-empty' if not entry.display_name }}">{{ dish_label(entry) }}</div>
+          {% if entry.meal and entry.meal.description %}<p class="dish-desc">{{ entry.meal.description }}</p>{% endif %}
+          {% if entry.meal and entry.meal.ingredient_list %}<p class="dish-ingredients">{{ entry.meal.ingredient_list|join(' · ') }}</p>{% endif %}
+        </div>
+        {% else %}
+        <span class="dish-name {{ 'is-skipped' if entry.skipped else 'is-empty' if not entry.display_name }}">{{ dish_label(entry) }}</span>
+        {% endif %}
+        {{ tag(entry.display_type) }}
+      </div>
+      {% endfor %}
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+{%- endmacro %}
+
+{% macro shopping_list(plan) -%}
+{% set items = plan.shopping_list() %}
+{% if items %}
+<section class="card card-pad shopping-card">
+  <div class="row" style="margin-bottom: 10px">
+    <h3 class="card-title">{{ icon('cart', 18) }} Shopping list</h3>
+    <span class="spacer"></span>
+    <span class="muted small">{{ items|length }} items</span>
+  </div>
+  <ul class="shopping">
+    {% for name, count in items %}
+    <li><label><input type="checkbox"><span>{{ name }}</span>{% if count > 1 %}<span class="count">×{{ count }}</span>{% endif %}</label></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{%- endmacro %}
